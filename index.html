@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gold Risk Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial; padding: 20px; background:#111; color:white; }
+        input, button { width:100%; padding:10px; margin:5px 0; }
+        button { background:gold; border:none; font-weight:bold; }
+        .result { margin-top:15px; font-size:18px; }
+    </style>
+</head>
+<body>
+
+<h2>Gold Risk Calculator</h2>
+
+<label>ทุน</label>
+<input type="number" id="capital">
+
+<label>เสี่ยง % ต่อไม้</label>
+<input type="number" id="risk">
+
+<label>Stop Loss (จุด)</label>
+<input type="number" id="sl">
+
+<button onclick="calculate()">คำนวณ</button>
+
+<div class="result" id="output"></div>
+
+<script>
+function calculate() {
+    let capital = parseFloat(document.getElementById("capital").value);
+    let riskPercent = parseFloat(document.getElementById("risk").value);
+    let sl = parseFloat(document.getElementById("sl").value);
+
+    let riskAmount = capital * (riskPercent / 100);
+    let lot = riskAmount / (sl * 10);
+
+    document.getElementById("output").innerHTML =
+        "เสี่ยงได้: " + riskAmount.toFixed(2) +
+        "<br>Lot ประมาณ: " + lot.toFixed(2);
+}
+</script>
+
+</body>
+</html>
