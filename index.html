@@ -1,44 +1,111 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Gold Risk Calculator</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: Arial; padding: 20px; background:#111; color:white; }
-        input, button { width:100%; padding:10px; margin:5px 0; }
-        button { background:gold; border:none; font-weight:bold; }
-        .result { margin-top:15px; font-size:18px; }
-    </style>
+<meta charset="UTF-8">
+<title>Gold Trading Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+<style>
+body{background:#0f172a;color:white;font-family:sans-serif;text-align:center}
+input,button{padding:8px;margin:5px}
+.container{max-width:900px;margin:auto}
+.card{background:#1e293b;padding:15px;border-radius:10px;margin-top:15px}
+</style>
 </head>
 <body>
 
-<h2>Gold Risk Calculator</h2>
+<h2>📊 Gold Trading Pro System</h2>
 
-<label>ทุน</label>
-<input type="number" id="capital">
+<div class="container">
 
-<label>เสี่ยง % ต่อไม้</label>
-<input type="number" id="risk">
+<div class="card">
+<h3>📈 Live Gold Chart (XAU/USD)</h3>
+<canvas id="chart" height="100"></canvas>
+</div>
 
-<label>Stop Loss (จุด)</label>
-<input type="number" id="sl">
+<div class="card">
+<h3>💰 Risk Calculator</h3>
+
+<label>ทุน ($)</label><br>
+<input type="number" id="capital"><br>
+
+<label>เสี่ยง % ต่อไม้</label><br>
+<input type="number" id="riskPercent"><br>
+
+<label>Entry Price</label><br>
+<input type="number" id="entry"><br>
+
+<label>Stop Loss</label><br>
+<input type="number" id="sl"><br>
+
+<label>Take Profit</label><br>
+<input type="number" id="tp"><br>
 
 <button onclick="calculate()">คำนวณ</button>
 
-<div class="result" id="output"></div>
+<div id="result"></div>
+</div>
+
+</div>
 
 <script>
-function calculate() {
-    let capital = parseFloat(document.getElementById("capital").value);
-    let riskPercent = parseFloat(document.getElementById("risk").value);
-    let sl = parseFloat(document.getElementById("sl").value);
 
-    let riskAmount = capital * (riskPercent / 100);
-    let lot = riskAmount / (sl * 10);
+// ====== API KEY ใส่แล้ว ======
+const API_KEY = "aa56ae51e4014bd6a8c6e54e736d2764";
 
-    document.getElementById("output").innerHTML =
-        "เสี่ยงได้: " + riskAmount.toFixed(2) +
-        "<br>Lot ประมาณ: " + lot.toFixed(2);
+// ====== โหลดราคาทอง ======
+async function loadGold(){
+let res = await fetch(`https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=5min&outputsize=30&apikey=${API_KEY}`);
+let data = await res.json();
+
+if(!data.values){
+document.body.innerHTML += "<p>API Error หรือใช้เกินโควต้า</p>";
+return;
+}
+
+let values = data.values.reverse();
+
+let chartData = values.map(v => ({
+x: new Date(v.datetime),
+o: parseFloat(v.open),
+h: parseFloat(v.high),
+l: parseFloat(v.low),
+c: parseFloat(v.close)
+}));
+
+new Chart(document.getElementById("chart"), {
+type: 'candlestick',
+data: {
+datasets: [{
+label: 'XAU/USD',
+data: chartData
+}]
+}
+});
+}
+
+loadGold();
+
+// ====== ระบบคำนวณ Lot + Risk/Reward ======
+function calculate(){
+let capital = parseFloat(document.getElementById("capital").value);
+let riskPercent = parseFloat(document.getElementById("riskPercent").value);
+let entry = parseFloat(document.getElementById("entry").value);
+let sl = parseFloat(document.getElementById("sl").value);
+let tp = parseFloat(document.getElementById("tp").value);
+
+let riskMoney = capital * (riskPercent/100);
+let stopDistance = Math.abs(entry - sl);
+let lot = riskMoney / stopDistance / 100;
+
+let reward = Math.abs(tp - entry);
+let rr = reward / stopDistance;
+
+document.getElementById("result").innerHTML = `
+<p>🎯 Risk Amount: $${riskMoney.toFixed(2)}</p>
+<p>📦 Suggested Lot: ${lot.toFixed(2)}</p>
+<p>📊 Risk/Reward: 1 : ${rr.toFixed(2)}</p>
+`;
 }
 </script>
 
