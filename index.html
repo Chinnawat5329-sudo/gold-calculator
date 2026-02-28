@@ -2,28 +2,98 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Educational Slot Machine</title>
+<title>Advanced Slot Prototype</title>
 <style>
-body { text-align:center; font-family:Arial; }
-.slot { font-size:50px; margin:20px; }
-button { font-size:20px; padding:10px 20px; }
+body{
+    background: radial-gradient(circle,#222,#000);
+    font-family: Arial;
+    color:white;
+    text-align:center;
+}
+
+.container{
+    width:600px;
+    margin:30px auto;
+    padding:20px;
+    border:5px solid gold;
+    border-radius:15px;
+    background:#111;
+    box-shadow:0 0 25px gold;
+}
+
+.reels{
+    font-size:50px;
+    letter-spacing:15px;
+    margin:20px 0;
+    height:80px;
+}
+
+.spin-animation{
+    animation: blink 0.1s infinite alternate;
+}
+
+@keyframes blink{
+    from{opacity:1;}
+    to{opacity:0.5;}
+}
+
+button{
+    padding:10px 20px;
+    margin:5px;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.spin-btn{ background:gold; font-weight:bold; }
+.control-btn{ background:#444; color:white; }
+
+.paytable{
+    margin-top:15px;
+    font-size:14px;
+}
 </style>
 </head>
 <body>
 
-<h1>🎰 Slot Machine (For Education Only)</h1>
+<h1>🎰 SLOT MACHINE PROTOTYPE</h1>
 
-<p>เครดิต: <span id="credit">1000</span></p>
+<div class="container">
 
-<div class="slot" id="result">❓ ❓ ❓</div>
+<div>
+เครดิต: <span id="credit">2000</span> |
+เบท: <span id="bet">20</span>
+</div>
 
-<button onclick="spin()">Spin (Bet 10)</button>
+<div class="reels" id="reels">
+❓ ❓ ❓ ❓ ❓
+</div>
 
-<p id="message"></p>
+<div>
+<button class="spin-btn" onclick="spin()">SPIN</button>
+<button class="control-btn" onclick="toggleAuto()">AUTO</button>
+<button class="control-btn" onclick="changeBet(10)">+Bet</button>
+<button class="control-btn" onclick="changeBet(-10)">-Bet</button>
+</div>
+
+<div id="message"></div>
+
+<div class="paytable">
+<hr>
+🍒 x5 = 200 <br>
+🍋 x5 = 400 <br>
+⭐ x5 = 800 <br>
+7️⃣ x5 = 2000
+</div>
+
+</div>
 
 <script>
-let credit = 1000;
-let bet = 10;
+let credit = 2000;
+let bet = 20;
+let auto = false;
+let autoInterval;
 
 let symbols = [
     {icon:"🍒", weight:40},
@@ -32,43 +102,70 @@ let symbols = [
     {icon:"7️⃣", weight:10}
 ];
 
-function getRandomSymbol() {
-    let totalWeight = symbols.reduce((sum,s)=>sum+s.weight,0);
-    let random = Math.random() * totalWeight;
-    for (let s of symbols) {
-        if (random < s.weight) return s.icon;
-        random -= s.weight;
+let spinSound = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
+
+function randomSymbol(){
+    let total = symbols.reduce((a,b)=>a+b.weight,0);
+    let r = Math.random()*total;
+    for(let s of symbols){
+        if(r < s.weight) return s.icon;
+        r -= s.weight;
     }
 }
 
-function spin() {
-    if (credit < bet) {
-        document.getElementById("message").innerText = "เครดิตไม่พอ";
+function changeBet(amount){
+    bet += amount;
+    if(bet < 10) bet = 10;
+    document.getElementById("bet").innerText = bet;
+}
+
+function spin(){
+    if(credit < bet){
+        document.getElementById("message").innerText="เครดิตไม่พอ";
+        auto = false;
+        clearInterval(autoInterval);
         return;
     }
 
     credit -= bet;
-
-    let s1 = getRandomSymbol();
-    let s2 = getRandomSymbol();
-    let s3 = getRandomSymbol();
-
-    document.getElementById("result").innerHTML = s1+" "+s2+" "+s3;
-
-    let win = 0;
-
-    if (s1 === s2 && s2 === s3) {
-        if (s1 === "🍒") win = 50;
-        if (s1 === "🍋") win = 100;
-        if (s1 === "⭐") win = 200;
-        if (s1 === "7️⃣") win = 500;
-    }
-
-    credit += win;
     document.getElementById("credit").innerText = credit;
 
-    document.getElementById("message").innerText =
-        win > 0 ? "ชนะ "+win+" เครดิต!" : "ไม่ถูกรางวัล";
+    let reelsDiv = document.getElementById("reels");
+    reelsDiv.classList.add("spin-animation");
+    spinSound.play();
+
+    setTimeout(()=>{
+        let results = [];
+        for(let i=0;i<5;i++){
+            results.push(randomSymbol());
+        }
+
+        reelsDiv.classList.remove("spin-animation");
+        reelsDiv.innerText = results.join(" ");
+
+        let win = 0;
+        if(results.every(r=>r===results[0])){
+            if(results[0]==="🍒") win=200;
+            if(results[0]==="🍋") win=400;
+            if(results[0]==="⭐") win=800;
+            if(results[0]==="7️⃣") win=2000;
+        }
+
+        credit += win;
+        document.getElementById("credit").innerText = credit;
+        document.getElementById("message").innerText =
+            win>0 ? "🎉 ชนะ "+win+" เครดิต!" : "ไม่ถูกรางวัล";
+
+    },800);
+}
+
+function toggleAuto(){
+    auto = !auto;
+    if(auto){
+        autoInterval = setInterval(spin,1500);
+    }else{
+        clearInterval(autoInterval);
+    }
 }
 </script>
 
