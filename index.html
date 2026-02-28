@@ -2,110 +2,73 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Gold Trading Pro</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+<title>Educational Slot Machine</title>
 <style>
-body{background:#0f172a;color:white;font-family:sans-serif;text-align:center}
-input,button{padding:8px;margin:5px}
-.container{max-width:900px;margin:auto}
-.card{background:#1e293b;padding:15px;border-radius:10px;margin-top:15px}
+body { text-align:center; font-family:Arial; }
+.slot { font-size:50px; margin:20px; }
+button { font-size:20px; padding:10px 20px; }
 </style>
 </head>
 <body>
 
-<h2>📊 Gold Trading Pro System</h2>
+<h1>🎰 Slot Machine (For Education Only)</h1>
 
-<div class="container">
+<p>เครดิต: <span id="credit">1000</span></p>
 
-<div class="card">
-<h3>📈 Live Gold Chart (XAU/USD)</h3>
-<canvas id="chart" height="100"></canvas>
-</div>
+<div class="slot" id="result">❓ ❓ ❓</div>
 
-<div class="card">
-<h3>💰 Risk Calculator</h3>
+<button onclick="spin()">Spin (Bet 10)</button>
 
-<label>ทุน ($)</label><br>
-<input type="number" id="capital"><br>
-
-<label>เสี่ยง % ต่อไม้</label><br>
-<input type="number" id="riskPercent"><br>
-
-<label>Entry Price</label><br>
-<input type="number" id="entry"><br>
-
-<label>Stop Loss</label><br>
-<input type="number" id="sl"><br>
-
-<label>Take Profit</label><br>
-<input type="number" id="tp"><br>
-
-<button onclick="calculate()">คำนวณ</button>
-
-<div id="result"></div>
-</div>
-
-</div>
+<p id="message"></p>
 
 <script>
+let credit = 1000;
+let bet = 10;
 
-// ====== API KEY ใส่แล้ว ======
-const API_KEY = "aa56ae51e4014bd6a8c6e54e736d2764";
+let symbols = [
+    {icon:"🍒", weight:40},
+    {icon:"🍋", weight:30},
+    {icon:"⭐", weight:20},
+    {icon:"7️⃣", weight:10}
+];
 
-// ====== โหลดราคาทอง ======
-async function loadGold(){
-let res = await fetch(`https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=5min&outputsize=30&apikey=${API_KEY}`);
-let data = await res.json();
-
-if(!data.values){
-document.body.innerHTML += "<p>API Error หรือใช้เกินโควต้า</p>";
-return;
+function getRandomSymbol() {
+    let totalWeight = symbols.reduce((sum,s)=>sum+s.weight,0);
+    let random = Math.random() * totalWeight;
+    for (let s of symbols) {
+        if (random < s.weight) return s.icon;
+        random -= s.weight;
+    }
 }
 
-let values = data.values.reverse();
+function spin() {
+    if (credit < bet) {
+        document.getElementById("message").innerText = "เครดิตไม่พอ";
+        return;
+    }
 
-let chartData = values.map(v => ({
-x: new Date(v.datetime),
-o: parseFloat(v.open),
-h: parseFloat(v.high),
-l: parseFloat(v.low),
-c: parseFloat(v.close)
-}));
+    credit -= bet;
 
-new Chart(document.getElementById("chart"), {
-type: 'candlestick',
-data: {
-datasets: [{
-label: 'XAU/USD',
-data: chartData
-}]
-}
-});
-}
+    let s1 = getRandomSymbol();
+    let s2 = getRandomSymbol();
+    let s3 = getRandomSymbol();
 
-loadGold();
+    document.getElementById("result").innerHTML = s1+" "+s2+" "+s3;
 
-// ====== ระบบคำนวณ Lot + Risk/Reward ======
-function calculate(){
-let capital = parseFloat(document.getElementById("capital").value);
-let riskPercent = parseFloat(document.getElementById("riskPercent").value);
-let entry = parseFloat(document.getElementById("entry").value);
-let sl = parseFloat(document.getElementById("sl").value);
-let tp = parseFloat(document.getElementById("tp").value);
+    let win = 0;
 
-let riskMoney = capital * (riskPercent/100);
-let stopDistance = Math.abs(entry - sl);
-let lot = riskMoney / stopDistance / 100;
+    if (s1 === s2 && s2 === s3) {
+        if (s1 === "🍒") win = 50;
+        if (s1 === "🍋") win = 100;
+        if (s1 === "⭐") win = 200;
+        if (s1 === "7️⃣") win = 500;
+    }
 
-let reward = Math.abs(tp - entry);
-let rr = reward / stopDistance;
+    credit += win;
+    document.getElementById("credit").innerText = credit;
 
-document.getElementById("result").innerHTML = `
-<p>🎯 Risk Amount: $${riskMoney.toFixed(2)}</p>
-<p>📦 Suggested Lot: ${lot.toFixed(2)}</p>
-<p>📊 Risk/Reward: 1 : ${rr.toFixed(2)}</p>
-`;
+    document.getElementById("message").innerText =
+        win > 0 ? "ชนะ "+win+" เครดิต!" : "ไม่ถูกรางวัล";
 }
 </script>
 
